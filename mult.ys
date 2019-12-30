@@ -1,0 +1,115 @@
+/*
+  Katie Bourque
+  Assignment 8
+  Computer Organizations
+*/
+
+.pos 0x000
+
+main:
+   irmovl $9, %edi #store 9 in edi
+   irmovl Stack, %esp #stack pointer
+   irmovl Array, %ebx #array base address
+
+outer: #outer loop
+     irmovl $12, %esi #store 12 in esi
+     subl %edi, %esi  #jump to end if negative
+     jle end
+     irmovl $1, %edx #fac2
+
+inner: #inner loop
+     pushl %ebx
+     pushl %edx #fac2
+     pushl %edi #fac1
+     call rmult
+     popl %edi
+     popl %edx
+     popl %ebx
+     irmovl $0xffffffff, %esi
+     rmmovl %esi, (%ebx) #store in first element of array
+     irmovl $4, %esi
+     addl %esi, %ebx #increment array pointer
+     rmmovl %ecx, (%ebx) #store rmult result in array
+     pushl %ebx
+     pushl %edx
+     pushl %edi
+     call bmult
+     popl %edi
+     popl %edx
+     popl %ebx
+     irmovl $4, %esi #constant 4 to increment array pointer
+     addl %esi, %ebx #increment pointer
+     rmmovl %ecx, (%ebx) #store bmult result in array
+     irmovl $4, %esi
+     addl %esi, %ebx #increment pointer
+     irmovl $7, %esi
+     subl %edx, %esi #jump to end if negative
+     jle innerend
+     irmovl $2, %esi
+     addl %esi, %edx #add 2 to fac2
+     jmp inner #loop again
+
+innerend:
+    irmovl $1, %esi
+    addl %esi, %edi #fac1++
+    jmp outer #loop again
+
+rmult:
+   pushl %ebp
+   rrmovl %esp, %ebp
+   mrmovl 8(%ebp), %edi #store i/fac1 in edi
+   mrmovl 12(%ebp), %edx #store j/fac2 in edx
+   rrmovl %edi, %ecx #return value in ecx
+   irmovl $1, %esi
+   subl %edx, %esi #check if j == 1
+   je rmultend
+   rrmovl %edx, %eax #j stored in eax
+   irmovl $1, %esi
+   subl %esi, %eax #j--
+   pushl %eax #j
+   pushl %edi #i
+   call rmult
+   popl %edi
+   popl %eax
+   addl %edi, %ecx #add i to the next iteration of j-1
+
+rmultend:
+    popl %ebp
+    ret
+
+bmult: #setting up registers for bmult
+    pushl %ebp
+    rrmovl %esp, %ebp
+    mrmovl 8(%ebp), %edi #store fac1/i in edi
+    mrmovl 12(%ebp), %edx #store fac2/j in edx
+    irmovl $0, %ecx #store sum at ecx
+    irmovl $1, %eax #store bit at eax
+    rrmovl %edi, %ebx #i at ebx
+
+bmultend:
+    rrmovl %edi, %esi #j
+    andl %eax, %esi
+    jne for  #go to conditional
+
+while:
+    addl %eax, %eax
+    addl %ebx, %ebx
+    rrmovl %edx, %esi #j
+    subl %eax, %esi
+    jge bmultend #go to bmult
+    popl %ebp
+    ret
+
+for:
+   addl %ebx, %ecx #mult result added to sum
+   jmp while #go to while loop
+
+end:
+  halt
+
+.pos 0x200 #array starts here
+.align 4
+Array:
+
+.pos 0x400 #stack starts here
+Stack:
